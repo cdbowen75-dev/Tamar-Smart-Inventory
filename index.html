@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamar Smart Inventory</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f5f7;
+  margin: 0;
+  color: #25313d;
+}
+
+header {
+  background: #173b35;
+  color: white;
+  padding: 25px 20px;
+  text-align: center;
+}
+
+header h1 { margin: 0 0 8px; }
+
+header p { margin: 0; color: #d9e5df; }
+
+main {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #00000012;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+button {
+  background: #173b35;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 13px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+button:hover { background: #286456; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 7px 0 15px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  font-size: 16px;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+}
+
+.notice {
+  background: #fff4d6;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.record {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.record img {
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: 8px;
+  display: block;
+  margin-top: 10px;
+}
+
+#inventoryForm { display: none; }
+
+#records { overflow-wrap: anywhere; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>TAMAR</h1>
+  <p>Kitchen & Bar | Smart Inventory</p>
+</header>
+
+<main>
+
+<section class="card">
+  <h2>Inventory Dashboard</h2>
+  <p>Select an area to begin your inventory.</p>
+  <div id="sections" class="grid"></div>
+</section>
+
+<section id="inventoryForm" class="card">
+  <h2 id="sectionTitle"></h2>
+
+  <label for="employee">Employee Name</label>
+  <input id="employee" placeholder="Enter your name">
+
+  <label for="shift">Inventory Shift</label>
+  <select id="shift">
+    <option value="Morning">Morning Opening</option>
+    <option value="Evening">Evening Closing</option>
+  </select>
+
+  <label for="product">Product Name</label>
+  <input id="product" placeholder="Example: Tito's Vodka">
+
+  <label for="quantity">Quantity</label>
+  <input id="quantity" type="number" min="0" step="0.01"
+         placeholder="Example: 2.5">
+
+  <label for="unit">Unit</label>
+  <select id="unit">
+    <option>Bottles</option>
+    <option>Cans</option>
+    <option>Cases</option>
+    <option>Kegs</option>
+    <option>Other</option>
+  </select>
+
+  <label for="photo">Inventory Photo</label>
+  <input id="photo" type="file" accept="image/*" capture="environment">
+
+  <label for="notes">Notes</label>
+  <textarea id="notes" placeholder="Optional notes"></textarea>
+
+  <button onclick="saveInventory()">Save Inventory</button>
+  <button onclick="closeForm()" style="background:#777">
+    Back to Dashboard
+  </button>
+</section>
+
+<section class="card">
+  <h2>Inventory History</h2>
+  <p class="notice">
+    This first version saves inventory only in this browser.
+    It does not yet synchronize between employees or devices.
+    Photos and records may be lost if browser data is cleared.
+  </p>
+  <div id="records"></div>
+</section>
+
+</main>
+
+<script>
+const areas = [
+  "Main Service Bar",
+  "Well 2",
+  "Well 3",
+  "Bar Display",
+  "Cooler 1",
+  "Cooler 2",
+  "Cooler 3",
+  "Cooler 4",
+  "Bar Wine",
+  "Cage 1 - Liquor",
+  "Cage 2 - Wine",
+  "Keg Cooler",
+  "Draft Beer Lines",
+  "Office Liquor"
+];
+
+let currentArea = "";
+let records = JSON.parse(
+  localStorage.getItem("tamarInventory") || "[]"
+);
+
+const sections = document.getElementById("sections");
+
+areas.forEach(area => {
+  const button = document.createElement("button");
+  button.textContent = area;
+  button.onclick = () => openArea(area);
+  sections.appendChild(button);
+});
+
+function openArea(area) {
+  currentArea = area;
+  document.getElementById("sectionTitle").textContent = area;
+  document.getElementById("inventoryForm").style.display = "block";
+  document.getElementById("inventoryForm")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+function closeForm() {
+  document.getElementById("inventoryForm").style.display = "none";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function saveInventory() {
+  const employee = document.getElementById("employee").value.trim();
+  const product = document.getElementById("product").value.trim();
+  const quantityText = document.getElementById("quantity").value;
+  const quantity = Number(quantityText);
+  const shift = document.getElementById("shift").value;
+  const unit = document.getElementById("unit").value;
+  const notes = document.getElementById("notes").value;
+  const photo = document.getElementById("photo").files[0];
+
+  if (!employee || !product || quantityText === "" ||
+      !Number.isFinite(quantity) || quantity < 0) {
+    alert("Please enter employee, product, and a valid quantity.");
+    return;
+  }
+
+  if (photo) {
+    alert(
+      "This starter version cannot permanently store photos. " +
+      "The inventory count will be saved without the photo."
+    );
+  }
+
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    area: currentArea,
+    employee,
+    shift,
+    product,
+    quantity,
+    unit,
+    notes
+  };
+
+  records.unshift(entry);
+
+  try {
+    localStorage.setItem("tamarInventory", JSON.stringify(records));
+  } catch (error) {
+    records.shift();
+    alert("Storage is full. Inventory was not saved.");
+    return;
+  }
+
+  document.getElementById("product").value = "";
+  document.getElementById("quantity").value = "";
+  document.getElementById("photo").value = "";
+  document.getElementById("notes").value = "";
+
+  showRecords();
+  alert("Inventory saved in this browser!");
+}
+
+function showRecords() {
+  const container = document.getElementById("records");
+  container.innerHTML = "";
+
+  if (!records.length) {
+    container.textContent = "No inventory records yet.";
+    return;
+  }
+
+  records.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "record";
+
+    const title = document.createElement("strong");
+    title.textContent = entry.area + " — " + entry.product;
+
+    const details = document.createElement("p");
+    details.textContent =
+      entry.quantity + " " + entry.unit +
+      " | " + entry.shift +
+      " | " + entry.employee +
+      " | " + entry.date;
+
+    div.appendChild(title);
+    div.appendChild(details);
+
+    if (entry.notes) {
+      const note = document.createElement("p");
+      note.textContent = entry.notes;
+      div.appendChild(note);
+    }
+
+    container.appendChild(div);
+  });
+}
+
+showRecords();
+</script>
+
+</body>
+</html>
