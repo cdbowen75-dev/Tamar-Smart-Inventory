@@ -301,6 +301,20 @@ function showRecords() {
 
 showRecords();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script>
+const SUPABASE_URL = "https://bibvkjmrrffxfrezzvkj.supabase.co"
+
+const SUPABASE_KEY = "sb_publishable_4TtFtgJQU8aqDaW-7I_U7w_qVkPcZ64";
+
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+console.log("Tamar Smart Inventory connected to Supabase");
+</script>
 </body>
 </html>
