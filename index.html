@@ -209,7 +209,7 @@ function closeForm() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function saveInventory() {
+async function saveInventory() {
   const employee = document.getElementById("employee").value.trim();
   const product = document.getElementById("product").value.trim();
   const quantityText = document.getElementById("quantity").value;
